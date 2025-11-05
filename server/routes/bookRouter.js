@@ -2,36 +2,38 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-
 const {
   getBook,
   getAllBooks,
   addBook,
   updateBook,
-  deleteBook
+  deleteBook,
 } = require("../controllers/bookController");
 
-// Multer storage
+// Storage config
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+  destination: (_, __, cb) => cb(null, "uploads/"),
+  filename: (_, file, cb) =>
+    cb(null, Date.now() + path.extname(file.originalname)),
 });
 
+// Allow both image + pdf
 const upload = multer({
   storage,
-  fileFilter: (req, file, cb) => {
-    const allowed = [".jpg", ".jpeg", ".png"];
+  fileFilter: (_, file, cb) => {
+    const allowed = [".jpg", ".jpeg", ".png", ".pdf"];
     const ext = path.extname(file.originalname).toLowerCase();
-    if (!allowed.includes(ext)) return cb(new Error("Only .jpg, .jpeg, .png allowed!"));
-    cb(null, true);
-  }
+    return allowed.includes(ext)
+      ? cb(null, true)
+      : cb(new Error("Only .jpg, .jpeg, .png, .pdf allowed!"));
+  },
 });
 
 // Routes
 router.get("/getAll", getAllBooks);
 router.get("/get/:id", getBook);
-router.post("/add", upload.single("photo"), addBook);
-router.put("/update/:id", upload.single("photo"), updateBook);
+router.post("/add", upload.single("file"), addBook);
+router.put("/update/:id", upload.single("file"), updateBook);
 router.delete("/delete/:id", deleteBook);
 
 module.exports = router;

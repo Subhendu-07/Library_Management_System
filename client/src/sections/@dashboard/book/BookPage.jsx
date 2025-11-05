@@ -22,7 +22,6 @@ import Label from "../../../components/label";
 import BookDialog from "./BookDialog";
 import BookForm from "./BookForm";
 import Iconify from "../../../components/iconify";
-import { apiUrl, methods, routes } from "../../../constants";
 
 const StyledBookImage = styled("img")({
   top: 0,
@@ -35,17 +34,7 @@ const StyledBookImage = styled("img")({
 
 const BookPage = () => {
   const { user } = useAuth();
-  const [book, setBook] = useState({
-    id: "",
-    name: "",
-    isbn: "",
-    summary: "",
-    isAvailable: true,
-    authorId: "",
-    genreId: "",
-    photoUrl: ""
-  });
-
+  const [book, setBook] = useState({});
   const [books, setBooks] = useState([]);
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -54,11 +43,11 @@ const BookPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateForm, setIsUpdateForm] = useState(false);
 
-  // --- Fetch all books ---
+  // Fetch all books
   const getAllBooks = () => {
     setIsTableLoading(true);
     axios
-      .get(apiUrl(routes.BOOK, methods.GET_ALL))
+      .get(`http://localhost:8080/api/book/getAll`)
       .then((res) => {
         setBooks(res.data.booksList || []);
         setIsTableLoading(false);
@@ -69,10 +58,10 @@ const BookPage = () => {
       });
   };
 
-  // --- Delete book ---
+  // Delete book
   const deleteBook = (bookId) => {
     axios
-      .delete(apiUrl(routes.BOOK, methods.DELETE, bookId))
+      .delete(`http://localhost:8080/api/book/delete/${bookId}`)
       .then(() => {
         toast.success("Book deleted");
         handleCloseDialog();
@@ -84,33 +73,10 @@ const BookPage = () => {
 
   const getSelectedBookDetails = () => {
     const selected = books.find((b) => b._id === selectedBookId);
-    setBook(
-      selected || {
-        id: "",
-        name: "",
-        isbn: "",
-        summary: "",
-        isAvailable: true,
-        authorId: "",
-        genreId: "",
-        photoUrl: ""
-      }
-    );
+    setBook(selected || {});
   };
 
-  const clearForm = () =>
-    setBook({
-      id: "",
-      name: "",
-      isbn: "",
-      summary: "",
-      isAvailable: true,
-      authorId: "",
-      genreId: "",
-      photoUrl: ""
-    });
-
-  // --- Handlers ---
+  // Menu & modal handlers
   const handleOpenMenu = (e) => setIsMenuOpen(e.currentTarget);
   const handleCloseMenu = () => setIsMenuOpen(null);
   const handleOpenDialog = () => setIsDialogOpen(true);
@@ -136,7 +102,7 @@ const BookPage = () => {
               variant="contained"
               onClick={() => {
                 setIsUpdateForm(false);
-                clearForm();
+                setBook({});
                 handleOpenModal();
               }}
               startIcon={<Iconify icon="eva:plus-fill" />}
@@ -163,7 +129,6 @@ const BookPage = () => {
                         top: 16,
                         left: 16,
                         position: "absolute",
-                        textTransform: "uppercase",
                         color: "primary.main"
                       }}
                     >
@@ -225,7 +190,22 @@ const BookPage = () => {
                     <Typography variant="subtitle2" textAlign="center" mt={1}>
                       ISBN: {b.isbn}
                     </Typography>
-                    <Typography variant="body2">{b.summary}</Typography>
+                    <Typography variant="body2" textAlign="center">
+                      {b.summary}
+                    </Typography>
+
+                    {/* PDF Button */}
+                    {b.pdfUrl && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        sx={{ mt: 1 }}
+                        href={`http://localhost:8080${b.pdfUrl}`}
+                        target="_blank"
+                      >
+                        View PDF
+                      </Button>
+                    )}
                   </Stack>
                 </Card>
               </Grid>

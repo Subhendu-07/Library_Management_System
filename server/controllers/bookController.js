@@ -1,7 +1,8 @@
 const Book = require("../models/book");
 const mongoose = require("mongoose");
+const path = require("path");
 
-// Get all books with author and genre populated
+// Get all books with author & genre populated
 const getAllBooks = async (req, res) => {
   try {
     const books = await Book.aggregate([
@@ -24,6 +25,7 @@ const getAllBooks = async (req, res) => {
       },
       { $unwind: { path: "$genre", preserveNullAndEmptyArrays: true } },
     ]);
+
     res.status(200).json({ success: true, booksList: books });
   } catch (err) {
     console.error(err);
@@ -43,7 +45,7 @@ const getBook = async (req, res) => {
   }
 };
 
-// Add new book
+// Add new book (supports image + PDF)
 const addBook = async (req, res) => {
   try {
     const { name, isbn, authorId, genreId, isAvailable, summary } = req.body;
@@ -54,13 +56,22 @@ const addBook = async (req, res) => {
         .json({ success: false, err: "Required fields missing" });
     }
 
+    const file = req.file;
     const newBook = {
       name,
       isbn,
-      isAvailable: isAvailable === "true" || isAvailable === true, // ✅ string → bool
+      isAvailable: isAvailable === "true" || isAvailable === true,
       summary: summary || "",
-      photoUrl: req.file ? `/uploads/${req.file.filename}` : "",
     };
+
+    if (file) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (ext === ".pdf") {
+        newBook.pdfUrl = `/uploads/${file.filename}`;
+      } else {
+        newBook.photoUrl = `/uploads/${file.filename}`;
+      }
+    }
 
     if (authorId) newBook.authorId = new mongoose.Types.ObjectId(authorId);
     if (genreId) newBook.genreId = new mongoose.Types.ObjectId(genreId);
@@ -73,19 +84,23 @@ const addBook = async (req, res) => {
   }
 };
 
-// Update book
+// Update book (supports image + PDF)
 const updateBook = async (req, res) => {
   try {
     const { isAvailable } = req.body;
     const updatedBook = { ...req.body };
 
-    // ✅ convert isAvailable to bool if coming as string
     if (isAvailable !== undefined) {
       updatedBook.isAvailable = isAvailable === "true" || isAvailable === true;
     }
 
     if (req.file) {
-      updatedBook.photoUrl = `/uploads/${req.file.filename}`;
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (ext === ".pdf") {
+        updatedBook.pdfUrl = `/uploads/${req.file.filename}`;
+      } else {
+        updatedBook.photoUrl = `/uploads/${req.file.filename}`;
+      }
     }
 
     if (updatedBook.authorId) {
@@ -98,6 +113,7 @@ const updateBook = async (req, res) => {
     const book = await Book.findByIdAndUpdate(req.params.id, updatedBook, {
       new: true,
     });
+
     if (!book)
       return res.status(404).json({ success: false, err: "Book not found" });
 
@@ -108,7 +124,7 @@ const updateBook = async (req, res) => {
   }
 };
 
-// Delete book
+//  Delete book
 const deleteBook = async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);

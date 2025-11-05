@@ -23,8 +23,6 @@ import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import Iconify from "../../../components/iconify";
 
-const API = process.env.BACKEND_URI;
-
 const BookForm = ({
   isUpdateForm,
   isModalOpen,
@@ -69,7 +67,8 @@ const BookForm = ({
       formData.append("genreId", book.genreId);
       formData.append("isAvailable", book.isAvailable);
       formData.append("summary", book.summary);
-      if (book.photo) formData.append("photo", book.photo);
+
+      if (book.file) formData.append("file", book.file);
 
       await axios.post(`http://localhost:8080/api/book/add`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
@@ -93,7 +92,8 @@ const BookForm = ({
       formData.append("genreId", book.genreId);
       formData.append("isAvailable", book.isAvailable);
       formData.append("summary", book.summary);
-      if (book.photo instanceof File) formData.append("photo", book.photo);
+
+      if (book.file instanceof File) formData.append("file", book.file);
 
       await axios.put(
         `http://localhost:8080/api/book/update/${book._id}`,
@@ -193,8 +193,16 @@ const BookForm = ({
                     setBook({ ...book, isAvailable: e.target.value === "true" })
                   }
                 >
-                  <FormControlLabel value="true" control={<Radio />} label="Available" />
-                  <FormControlLabel value="false" control={<Radio />} label="Not available" />
+                  <FormControlLabel
+                    value="true"
+                    control={<Radio />}
+                    label="Available"
+                  />
+                  <FormControlLabel
+                    value="false"
+                    control={<Radio />}
+                    label="Not available"
+                  />
                 </RadioGroup>
               </FormControl>
 
@@ -208,24 +216,22 @@ const BookForm = ({
                 onChange={(e) => setBook({ ...book, summary: e.target.value })}
               />
 
-              {/* Upload photo */}
+              {/* Upload file (image or PDF) */}
               <Button variant="outlined" component="label" color="info">
-                Upload photo
+                Upload Image or PDF
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,application/pdf"
                   hidden
                   onChange={(e) => {
                     const file = e.target.files[0];
-                    if (file) setBook({ ...book, photo: file });
+                    if (file) setBook({ ...book, file });
                   }}
                 />
               </Button>
-              {book.photo && (
+              {book.file && (
                 <Typography variant="body2" color="text.secondary">
-                  {book.photo.name
-                    ? `Selected: ${book.photo.name}`
-                    : "Existing photo kept"}
+                  Selected: {book.file.name}
                 </Typography>
               )}
 
